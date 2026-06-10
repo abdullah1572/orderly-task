@@ -12,7 +12,7 @@ import "./index.css";
 
 const queryClient = new QueryClient();
 
-// ─── Logo SVG ─────────────────────────────────────────────────────────────────
+
 function Logo() {
   return (
     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -66,7 +66,7 @@ function Dashboard() {
                   <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--warning)", animation: "pulse-dot 2s ease infinite" }} />
                   Testnet
                 </span>
-                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Ethereum Sepolia</span>
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Arbitrum Sepolia</span>
               </div>
             </div>
           </div>
@@ -208,7 +208,7 @@ function Dashboard() {
         fontSize: 11,
         color: "var(--text-muted)",
       }}>
-        Orderly Network Testnet · Ethereum Sepolia (chainId: 11155111)
+        Orderly Network Testnet · Arbitrum Sepolia (chainId: 421614)
         {" · "}
         <a
           href="https://orderly.network/docs"

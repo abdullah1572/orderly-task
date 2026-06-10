@@ -30,7 +30,7 @@ export function OnboardingPanel() {
 
   useEffect(() => {
     if (isConnected && address && step === "not_connected") {
-      setWallet(address, 11155111);
+      setWallet(address, 421614);
     }
     if (!isConnected && step !== "not_connected") {
       setStep("not_connected");

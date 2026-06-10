@@ -19,7 +19,7 @@ export function useBalance() {
   const [orderlyError, setOrderlyError] = useState<string | null>(null);
   const [orderlyLoading, setOrderlyLoading] = useState(false);
 
-  // On-chain USDC balance (Ethereum Sepolia)
+  // On-chain USDC balance (Arbitrum Sepolia)
   const { data: rawBalance, isLoading: walletLoading } = useReadContract({
     address: Arbitrum_SEPOLIA.contracts.USDC as `0x${string}`,
     abi: ERC20_ABI,
@@ -62,15 +62,13 @@ export function useBalance() {
     }
   }, [accountId, keypair]);
 
-  // Poll every 15s; also refetch immediately when accountId/keypair become available
   useEffect(() => {
     fetchOrderlyBalance();
     const interval = setInterval(fetchOrderlyBalance, 15_000);
     return () => clearInterval(interval);
   }, [fetchOrderlyBalance]);
 
-  // FIX: After a deposit succeeds, call refetchAfterDeposit() which waits 10s
-  // for Orderly to index the on-chain tx, then polls 3 more times every 5s.
+
   const refetchAfterDeposit = useCallback(async () => {
     console.log("⏳ Deposit confirmed — waiting 10s for Orderly indexing…");
     await new Promise((r) => setTimeout(r, 10_000));
