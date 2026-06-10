@@ -1,14 +1,18 @@
+# Project Network 
+
+ALL Project built on arbitrum Sepolia test network so you need usdc of arbitrum Sepolia also need arbitrum Sepolia
+
 # Orderly Perpetuals Dashboard — Testnet
 
 Frontend assessment: perpetuals trading dashboard on **Orderly Network testnet**.
 
 ## Stack
-TypeScript · React 18 · Zustand · Tailwind · wagmi v2 · viem
+TypeScript · React 18 · Redux · Tailwind · wagmi v2 · viem
 
 ---
 
 ## Setup
-
+ENV file also on github just for testing purpose other wise need to send you seprately
 ```bash
 npm install
 npm run dev
@@ -78,3 +82,8 @@ API:   https://testnet-api.orderly.org
 - ed25519 via @noble/ed25519: pure TS, audited, no native deps
 - Keypair in localStorage: fine for testnet; production needs encrypted keystore
 - Arbitrum Sepolia: Goerli deprecated Jan 2024; Sepolia is current testnet
+
+
+# Special Note Orderly Network is slow 
+
+You can see you transaction here https://testnet.layerzeroscan.com/address if orderly balance not updating becuase its of slow network but you can see transaction here
