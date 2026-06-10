@@ -44,7 +44,7 @@ export function useOnboarding() {
     }
   }, [address]);
 
-  // ── Step 2: Register account ─────────────────────────────────────────────
+  // register account
   const registerAccount = useCallback(async (): Promise<string> => {
     if (!address || !chainId) throw new Error("Wallet not connected");
 
@@ -94,7 +94,7 @@ export function useOnboarding() {
     return regRes.data.data.account_id as string;
   }, [address, chainId, signTypedDataAsync]);
 
-  // ── Step 3: Add Orderly key with correct scope ───────────────────────────
+  // add orderly key
   const addOrderlyKey = useCallback(async (_accountId: string) => {
     if (!address || !chainId) throw new Error("Wallet not connected");
 
@@ -108,7 +108,7 @@ export function useOnboarding() {
       brokerId: BROKER_ID,
       chainId: BigInt(chainId),
       orderlyKey: keypair.publicKey,
-      scope: "read,trading",          // ✅ correct scope
+      scope: "read,trading",         
       timestamp: BigInt(timestamp),
       expiration: BigInt(expiration),
     };
@@ -134,7 +134,7 @@ export function useOnboarding() {
         brokerId: BROKER_ID,
         chainId,
         orderlyKey: keypair.publicKey,
-        scope: "read,trading",         // ✅ correct scope
+        scope: "read,trading",       
         timestamp,
         expiration,
       },
@@ -149,7 +149,7 @@ export function useOnboarding() {
     return keypair;
   }, [address, chainId, signTypedDataAsync]);
 
-  // ── Main: run full onboarding ────────────────────────────────────────────
+  // run onboarding
   const runOnboarding = useCallback(async () => {
     try {
       setStatus({ type: "loading", message: "Checking existing account…" });
@@ -165,7 +165,7 @@ export function useOnboarding() {
 
       setAccountId(accountId);
 
-      // Always clear stale keypair and re-register with correct scope
+    
       clearKeypair();
       const keypair = await addOrderlyKey(accountId);
 

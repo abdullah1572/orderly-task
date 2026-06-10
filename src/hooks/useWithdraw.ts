@@ -6,9 +6,8 @@ import { BROKER_ID } from "../lib/constants";
 import { useOrderlyStore } from "../store/orderly";
 import { orderlyGet, orderlyPost } from "../lib/orderly";
 
-// ✅ Testnet ledger contract (Orderly L2 testnet)
 const LEDGER_CONTRACT = "0x1826B75e2ef249173FC735149AE4B8e9ea10abff" as `0x${string}`;
-const CHAIN_ID = 421614; // Arbitrum Sepolia
+const CHAIN_ID = 421614; 
 
 const WITHDRAW_TYPES = {
   Withdraw: [
@@ -36,11 +35,11 @@ export function useWithdraw() {
 
   const withdraw = useCallback(
     async (amount: string) => {
-      console.log("=== WITHDRAW START ===");
-      console.log("🔑 BROKER_ID:", BROKER_ID);
-      console.log("address:", address);
-      console.log("accountId:", accountId);
-      console.log("amount requested:", amount);
+      // console.log("=== WITHDRAW START ===");
+      // console.log("🔑 BROKER_ID:", BROKER_ID);
+      // console.log("address:", address);
+      // console.log("accountId:", accountId);
+      // console.log("amount requested:", amount);
 
       if (!address || !accountId || !keypair) {
         setStatus({ type: "error", message: "Not onboarded. Please connect and onboard first." });
@@ -54,7 +53,7 @@ export function useWithdraw() {
       const receiver = getAddress(address);
 
       try {
-        // ── Step 1: Check balance + get nonce ──────────────────────────────
+        // check Orderly balance and nonce before signing
         setStatus({ type: "loading", message: "Checking Orderly balance…" });
 
         const [nonceData, holdingData] = await Promise.all([
@@ -62,12 +61,12 @@ export function useWithdraw() {
           orderlyGet<{ holding: { token: string; holding: number }[] }>("/v1/client/holding", accountId, keypair),
         ]);
 
-        console.log("✅ Nonce:", nonceData);
-        console.log("✅ Holding:", holdingData);
+        // console.log("✅ Nonce:", nonceData);
+        // console.log("✅ Holding:", holdingData);
 
         const usdcHolding = holdingData.holding?.find((h) => h.token === "USDC");
         const available = usdcHolding?.holding ?? 0;
-        console.log("💰 Available:", available);
+        // console.log("💰 Available:", available);
 
         if (available <= 0) {
           setStatus({ type: "error", message: "No USDC in Orderly account. Deposit first." });
@@ -80,16 +79,16 @@ export function useWithdraw() {
 
         const withdrawNonce = nonceData.withdraw_nonce;
 
-        // ✅ ONE timestamp used for both EIP-712 and API body
+        // one timestamp for both signing and submission to ensure validity of signature on-chain
         const timestamp = Date.now();
 
-        const tokenAmountRaw = parseUnits(amount, 6); // BigInt e.g. 1000000n
+        const tokenAmountRaw = parseUnits(amount, 6); 
 
-        console.log("📝 withdrawNonce:", withdrawNonce);
-        console.log("⏰ timestamp:", timestamp);
-        console.log("🔢 tokenAmountRaw:", tokenAmountRaw.toString());
+        // console.log("📝 withdrawNonce:", withdrawNonce);
+        // console.log("⏰ timestamp:", timestamp);
+        // console.log("🔢 tokenAmountRaw:", tokenAmountRaw.toString());
 
-        // ── Step 2: Sign EIP-712 ────────────────────────────────────────────
+        // sign the withdrawal message
         setStatus({ type: "loading", message: "Sign the withdrawal in your wallet…" });
 
         const signature = await signTypedDataAsync({
@@ -106,33 +105,33 @@ export function useWithdraw() {
             chainId:       BigInt(CHAIN_ID),
             receiver,
             token:         "USDC",
-            amount:        tokenAmountRaw,        // BigInt for EIP-712 uint256
+            amount:        tokenAmountRaw,        
             withdrawNonce: BigInt(withdrawNonce),
             timestamp:     BigInt(timestamp),
           },
         });
 
-        console.log("✅ Signature:", signature);
+        // console.log("✅ Signature:", signature);
 
-        // ── Step 3: Submit — all strings per Orderly docs ───────────────────
+        // submit the withdrawal request to Orderly
         setStatus({ type: "loading", message: "Submitting withdrawal to Orderly…" });
 
         const requestBody = {
           message: {
             brokerId:      BROKER_ID,
-            chainId:       CHAIN_ID,                    // number
+            chainId:       CHAIN_ID,                    
             receiver,
             token:         "USDC",
-            amount:        tokenAmountRaw.toString(),   // ✅ string: "1000000"
-            withdrawNonce: String(withdrawNonce),        // ✅ string: "1"
-            timestamp:     String(timestamp),            // ✅ string: "1781045590333"
+            amount:        tokenAmountRaw.toString(),   
+            withdrawNonce: String(withdrawNonce),        
+            timestamp:     String(timestamp),            
           },
           signature,
           userAddress:       receiver,
           verifyingContract: LEDGER_CONTRACT,
         };
 
-        console.log("📤 Request body:", JSON.stringify(requestBody, null, 2));
+        // console.log("📤 Request body:", JSON.stringify(requestBody, null, 2));
 
         const res = await orderlyPost<{ id: string }>(
           "/v1/withdraw_request",
@@ -141,7 +140,7 @@ export function useWithdraw() {
           keypair
         );
 
-        console.log("✅ Response:", res);
+        // console.log("✅ Response:", res);
         setStatus({ type: "success", withdrawId: res.id ?? "submitted" });
 
       } catch (err: unknown) {

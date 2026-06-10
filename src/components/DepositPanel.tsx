@@ -33,7 +33,7 @@ export function DepositPanel() {
 
   const handleDeposit = async () => {
     if (!amount || parseFloat(amount) <= 0) return;
-    console.log("[Deposit] Initiating deposit for amount:", amount);
+    // console.log("[Deposit] Initiating deposit for amount:", amount);
     await deposit(amount);
   };
 

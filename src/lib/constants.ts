@@ -1,5 +1,4 @@
-// ─── Orderly Testnet Configuration ───────────────────────────────────────────
-// All values are sourced from .env (VITE_ prefix required for Vite browser exposure)
+
 
 export const BROKER_ID: string =
   import.meta.env.VITE_BROKER_ID ?? "demo";
@@ -19,7 +18,7 @@ export const Arbitrum_SEPOLIA = {
   },
 };
 
-// EIP-712 off-chain domain (for Registration + AddOrderlyKey)
+// EIP-712 off-chain domain for signing messages that will be verified on Orderly's backend (not on-chain)
 export const EIP712_DOMAIN_OFFCHAIN = (chainId: number) => ({
   name: "Orderly",
   version: "1",
@@ -60,7 +59,7 @@ export const ADD_ORDERLY_KEY_TYPES = {
   ],
 } as const;
 
-// ─── Vault ABI ────────────────────────────────────────────────────────────────
+// vault abi for deposits
 export const VAULT_ABI = [
   {
     name: "deposit",

@@ -35,14 +35,14 @@ export function useDeposit() {
       if (!address || !accountId) throw new Error("Not onboarded");
 
       try {
-        // ── Step 0: Ensure wallet is on Arbitrum Sepolia ──────────────────────
+        // ensure user is on Arbitrum Sepolia before proceeding
         if (chainId !== arbitrumSepolia.id) {
           await switchChainAsync({ chainId: arbitrumSepolia.id });
         }
 
         const tokenAmount = parseUnits(amount, 6); // USDC = 6 decimals
 
-        // ── Step 1: Approve USDC spend to Vault ──────────────────────────────
+        // approve Vault to spend USDC on behalf of user
         setStatus({ type: "approving" });
         const approveHash = await writeContractAsync({
           address: Arbitrum_SEPOLIA.contracts.USDC as `0x${string}`,
@@ -56,28 +56,26 @@ export function useDeposit() {
         });
         setStatus({ type: "approve_pending", hash: approveHash });
 
-        // ── Step 2: Wait for approval to be mined ────────────────────────────
+        // wait for approval tx to be mined before sending deposit tx
         await waitForTransactionReceipt(wagmiConfig, {
           hash: approveHash,
           confirmations: 1,
         });
 
-        // ── Step 3: Build DepositData fields ─────────────────────────────────
+        // build deposit data
         const brokerHash = keccak256(toBytes(BROKER_ID)) as `0x${string}`;
         const tokenHash = keccak256(toBytes("USDC")) as `0x${string}`;
 
-        // Use the accountId returned by Orderly during onboarding — DO NOT recompute.
-        // Recomputing keccak256(address, brokerHash) gives a different value than
-        // what Orderly registered on-chain during the registration step.
+      
         const rawStored = accountId.replace(/^0x/i, "");
         const accountIdBytes32 = `0x${rawStored.padStart(64, "0")}` as `0x${string}`;
 
-        console.log("accountId being sent to Vault:", accountIdBytes32);
-        console.log("brokerHash                   :", brokerHash);
-        console.log("tokenHash                    :", tokenHash);
-        console.log("tokenAmount                  :", tokenAmount.toString());
+        // console.log("accountId being sent to Vault:", accountIdBytes32);
+        // console.log("brokerHash                   :", brokerHash);
+        // console.log("tokenHash                    :", tokenHash);
+        // console.log("tokenAmount                  :", tokenAmount.toString());
 
-        // ── Step 4: Call deposit(DepositData) on the Vault ───────────────────
+        // call deposit function on Vault
         setStatus({ type: "depositing" });
         const depHash = await writeContractAsync({
           address: Arbitrum_SEPOLIA.contracts.Vault as `0x${string}`,
@@ -91,12 +89,12 @@ export function useDeposit() {
               tokenAmount: tokenAmount,
             },
           ],
-          value: parseEther("0.001"), // ← LayerZero cross-chain fee
+          value: parseEther("0.001"), 
           ...GAS_OVERRIDE,
         });
         setStatus({ type: "deposit_pending", hash: depHash });
 
-        // ── Step 5: Wait for deposit to be mined ─────────────────────────────
+        // wait for deposit tx to be mined
         await waitForTransactionReceipt(wagmiConfig, {
           hash: depHash,
           confirmations: 1,

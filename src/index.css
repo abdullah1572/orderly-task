@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ─── Design Tokens ───────────────────────────────────────────────────────── */
+
 :root {
   /* Backgrounds */
   --bg-base:        #080a10;
@@ -43,7 +43,7 @@
   --radius-xl:  20px;
 }
 
-/* ─── Reset ───────────────────────────────────────────────────────────────── */
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { -webkit-text-size-adjust: 100%; }
@@ -59,19 +59,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── Scrollbar ───────────────────────────────────────────────────────────── */
+
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-base); }
 ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
-/* ─── Selection ───────────────────────────────────────────────────────────── */
+
 ::selection { background: var(--brand-glow); color: var(--text-primary); }
 
-/* ─── Focus visible ───────────────────────────────────────────────────────── */
+
 :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
-/* ─── Animations ──────────────────────────────────────────────────────────── */
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -112,7 +112,7 @@ body {
   flex-shrink: 0;
 }
 
-/* ─── Noise texture overlay ───────────────────────────────────────────────── */
+
 body::before {
   content: '';
   position: fixed;
@@ -123,7 +123,7 @@ body::before {
   z-index: 0;
 }
 
-/* ─── Grid background ─────────────────────────────────────────────────────── */
+
 .grid-bg {
   position: fixed;
   inset: 0;
@@ -137,7 +137,7 @@ body::before {
   mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, black, transparent);
 }
 
-/* ─── Glow accent top ─────────────────────────────────────────────────────── */
+
 .glow-top {
   position: fixed;
   top: -200px;
@@ -150,7 +150,7 @@ body::before {
   z-index: 0;
 }
 
-/* ─── Toast container ─────────────────────────────────────────────────────── */
+
 #toast-root {
   position: fixed;
   bottom: 24px;
@@ -162,10 +162,10 @@ body::before {
   pointer-events: none;
 }
 
-/* ─── Mono utility ────────────────────────────────────────────────────────── */
+
 .font-mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
 
-/* ─── Card ────────────────────────────────────────────────────────────────── */
+
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -182,7 +182,7 @@ body::before {
   pointer-events: none;
 }
 
-/* ─── Input ───────────────────────────────────────────────────────────────── */
+
 .input-field {
   width: 100%;
   background: var(--bg-input);
@@ -203,7 +203,7 @@ body::before {
 .input-field::placeholder { color: var(--text-muted); }
 .input-field:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ─── Buttons ─────────────────────────────────────────────────────────────── */
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -261,7 +261,7 @@ body::before {
 .btn-sm { padding: 6px 12px; font-size: 12px; }
 .btn-full { width: 100%; }
 
-/* ─── Status badges ───────────────────────────────────────────────────────── */
+
 .status-info {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 12px 14px;
@@ -293,13 +293,13 @@ body::before {
   line-height: 1.5;
 }
 
-/* ─── Divider ─────────────────────────────────────────────────────────────── */
+
 .divider {
   height: 1px;
   background: var(--border);
 }
 
-/* ─── Badge ───────────────────────────────────────────────────────────────── */
+
 .badge {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 3px 10px;
@@ -315,7 +315,7 @@ body::before {
   color: var(--warning);
 }
 
-/* ─── Number display ──────────────────────────────────────────────────────── */
+
 .num-display {
   font-family: 'JetBrains Mono', monospace;
   font-size: 22px;
@@ -325,32 +325,26 @@ body::before {
   line-height: 1.2;
 }
 
-/* ─── Responsive ──────────────────────────────────────────────────────────── */
+
 @media (max-width: 640px) {
   .num-display { font-size: 18px; }
   #toast-root { bottom: 16px; right: 16px; left: 16px; }
 }
 
-/* ─── Mobile responsive overrides ────────────────────────────────────────── */
+
 @media (max-width: 640px) {
-  /* Navbar compact */
   .nav-links { display: none; }
 
-  /* Stack cards full-width */
   .dashboard-grid {
     grid-template-columns: 1fr !important;
   }
 
-  /* Smaller hero text */
   .hero-title { font-size: 22px !important; }
 
-  /* Adjust padding */
   .main-container { padding: 24px 16px 60px !important; }
 
-  /* Toast bottom safe area */
   #toast-root { bottom: env(safe-area-inset-bottom, 16px); right: 16px; left: 16px; }
 
-  /* Card padding */
   .card-body { padding: 18px 18px !important; }
 }
 

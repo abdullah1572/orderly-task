@@ -3,7 +3,7 @@ import type { PayloadAction } from "@reduxjs/toolkit";
 import { useDispatch, useSelector } from "react-redux";
 import type { OrderlyKeypair } from "../lib/orderly";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// types and functions related to Orderly account management
 export type OnboardingStep =
   | "not_connected"
   | "connected"
@@ -20,7 +20,7 @@ interface OrderlyState {
   step: OnboardingStep;
 }
 
-// ─── Load persisted state from localStorage ───────────────────────────────────
+// load and save to localStorage 
 function loadPersistedState(): Partial<OrderlyState> {
   try {
     const raw = localStorage.getItem("orderly-session");
@@ -33,7 +33,7 @@ function loadPersistedState(): Partial<OrderlyState> {
 
 function savePersistedState(state: OrderlyState) {
   try {
-    // Only persist accountId, keypair, step (not wallet — re-detected on connect)
+    // Only persist accountId and keypair
     localStorage.setItem(
       "orderly-session",
       JSON.stringify({
@@ -47,7 +47,7 @@ function savePersistedState(state: OrderlyState) {
   }
 }
 
-// ─── Initial state ────────────────────────────────────────────────────────────
+// initial state with persisted values if available
 const persisted = loadPersistedState();
 
 const initialState: OrderlyState = {
@@ -58,7 +58,7 @@ const initialState: OrderlyState = {
   step: (persisted.step as OnboardingStep) ?? "not_connected",
 };
 
-// ─── Slice ────────────────────────────────────────────────────────────────────
+// slice for orderly state management
 const orderlySlice = createSlice({
   name: "orderly",
   initialState,
@@ -101,7 +101,7 @@ export const {
   reset,
 } = orderlySlice.actions;
 
-// ─── Store ────────────────────────────────────────────────────────────────────
+// store configuration
 export const store = configureStore({
   reducer: {
     orderly: orderlySlice.reducer,
@@ -113,11 +113,11 @@ store.subscribe(() => {
   savePersistedState(store.getState().orderly);
 });
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// types for use in components and hooks
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
-// ─── Typed hooks (drop-in replacement for useOrderlyStore) ───────────────────
+// ─── Typed hooks for using the store in components 
 export function useOrderlyStore() {
   const dispatch = useDispatch<AppDispatch>();
   const state = useSelector((s: RootState) => s.orderly);

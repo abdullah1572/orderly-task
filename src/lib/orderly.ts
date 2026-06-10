@@ -3,12 +3,12 @@ import * as ed from "@noble/ed25519";
 import { base58 } from "@scure/base";
 import { ORDERLY_TESTNET_API } from "./constants";
 
-// ─── Key storage helpers ──────────────────────────────────────────────────────
+// keypair storage
 const KEY_STORE_KEY = "orderly_ed25519_keypair";
 
 export interface OrderlyKeypair {
-  publicKey: string;    // "ed25519:<base58>"
-  privateKeyHex: string; // raw 32-byte hex
+  publicKey: string;    
+  privateKeyHex: string; 
 }
 
 export function getStoredKeypair(): OrderlyKeypair | null {
@@ -28,7 +28,7 @@ export function clearKeypair() {
   localStorage.removeItem(KEY_STORE_KEY);
 }
 
-// ─── Generate a fresh ed25519 keypair ────────────────────────────────────────
+// generate fresh ed25519 keypair for Orderly account and sign messages with it
 export async function generateKeypair(): Promise<OrderlyKeypair> {
   const privBytes = crypto.getRandomValues(new Uint8Array(32));
   const pubBytes = await ed.getPublicKeyAsync(privBytes);
@@ -41,7 +41,7 @@ export async function generateKeypair(): Promise<OrderlyKeypair> {
   };
 }
 
-// ─── Sign a message with ed25519 ─────────────────────────────────────────────
+// sign a message with the given ed25519 private key and return URL-safe base64 signature
 async function signMessage(message: string, privateKeyHex: string): Promise<string> {
   const privBytes = Uint8Array.from(
     privateKeyHex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16))
@@ -53,12 +53,12 @@ async function signMessage(message: string, privateKeyHex: string): Promise<stri
   return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-// ─── Timestamp helper ─────────────────────────────────────────────────────────
+// timestamp builder for orderly API requests (must be consistent with backend verification)
 function buildTimestamp() {
   return Date.now().toString();
 }
 
-// ─── GET ──────────────────────────────────────────────────────────────────────
+// get api signature for orderly requests (GET, POST, DELETE)
 export async function orderlyGet<T>(
   path: string,
   accountId: string,
@@ -84,7 +84,7 @@ export async function orderlyGet<T>(
   return data.data;
 }
 
-// ─── POST ─────────────────────────────────────────────────────────────────────
+// post api signature for orderly requests (GET, POST, DELETE)
 export async function orderlyPost<T>(
   path: string,
   body: Record<string, unknown>,
@@ -113,7 +113,7 @@ export async function orderlyPost<T>(
   return data.data;
 }
 
-// ─── DELETE ───────────────────────────────────────────────────────────────────
+// delete api signature for orderly requests (GET, POST, DELETE)
 export async function orderlyDelete<T>(
   path: string,
   body: Record<string, unknown>,
@@ -142,7 +142,7 @@ export async function orderlyDelete<T>(
   return data.data;
 }
 
-// ─── Derive accountId (placeholder — always use the one returned by Orderly) ──
+// ─── Derive accountId from wallet address + brokerId (must be consistent with backend registration logic) ───
 export function deriveAccountId(walletAddress: string, brokerId: string): string {
   return `${walletAddress.toLowerCase()}_${brokerId}`;
 }
