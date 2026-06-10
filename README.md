@@ -12,7 +12,8 @@ TypeScript · React 18 · Redux · Tailwind · wagmi v2 · viem
 ---
 
 ## Setup
-ENV file also on github just for testing purpose other wise need to send you seprately
+1 ENV file also on github just for testing purpose other wise need to send you seprately
+2 Need to add arbitrum sepolia into your metask manually
 ```bash
 npm install
 npm run dev
