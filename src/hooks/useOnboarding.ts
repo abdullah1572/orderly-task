@@ -95,7 +95,7 @@ export function useOnboarding() {
   }, [address, chainId, signTypedDataAsync]);
 
   // ── Step 3: Add Orderly key with correct scope ───────────────────────────
-  const addOrderlyKey = useCallback(async (accountId: string) => {
+  const addOrderlyKey = useCallback(async (_accountId: string) => {
     if (!address || !chainId) throw new Error("Wallet not connected");
 
     setStatus({ type: "loading", message: "Generating ed25519 keypair…" });
