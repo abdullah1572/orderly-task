@@ -79,7 +79,7 @@ API:   https://testnet-api.orderly.org
 ## Trade-offs
 
 - No RainbowKit: connectors wired manually with wagmi per spec
-- Zustand over Redux: lighter for this scope, swap trivially
+- Redux TooleKit
 - ed25519 via @noble/ed25519: pure TS, audited, no native deps
 - Keypair in localStorage: fine for testnet; production needs encrypted keystore
 - Arbitrum Sepolia: Goerli deprecated Jan 2024; Sepolia is current testnet
