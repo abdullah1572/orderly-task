@@ -22,7 +22,7 @@ export type OnboardingStatus =
   | { type: "success"; message: string }
   | { type: "error"; message: string };
 
-const TARGET_CHAIN_ID = arbitrumSepolia.id; // 421614
+const TARGET_CHAIN_ID = arbitrumSepolia.id; 
 
 export function useOnboarding() {
   const { address, chain: accountChain } = useAccount();

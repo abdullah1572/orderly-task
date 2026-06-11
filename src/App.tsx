@@ -43,7 +43,7 @@ function Dashboard() {
       <div className="grid-bg" />
       <div className="glow-top" />
 
-      {/* ─── Navbar ─────────────────────────────────────────────────────── */}
+      
       <header style={{
         position: "sticky", top: 0, zIndex: 50,
         borderBottom: "1px solid var(--border)",
@@ -87,7 +87,7 @@ function Dashboard() {
         </div>
       </header>
 
-      {/* ─── Main ────────────────────────────────────────────────────────── */}
+     
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 16px 80px" }}>
 
         {!isConnected && (
@@ -198,7 +198,7 @@ function NetworkValidator() {
 
   useEffect(() => {
     if (!isConnected || !chainId || !switchChainAsync) return;
-    if (chainId === arbitrumSepolia.id) return; // already on Arbitrum Sepolia
+    if (chainId === arbitrumSepolia.id) return; 
 
     switchChainAsync({ chainId: arbitrumSepolia.id }).catch((error) => {
       if (error?.code !== 4001) {
