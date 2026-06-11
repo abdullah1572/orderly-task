@@ -1,5 +1,7 @@
-import { WagmiProvider } from "wagmi";
+import { WagmiProvider, useAccount, useSwitchChain } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { arbitrumSepolia } from "wagmi/chains";
+import { useEffect } from "react";
 import { wagmiConfig } from "./lib/wagmi";
 import { MultiWalletButton } from "./components/MultiWalletButton";
 import { OnboardingPanel } from "./components/OnboardingPanel";
@@ -7,7 +9,7 @@ import { BalancePanel } from "./components/BalancePanel";
 import { DepositPanel } from "./components/DepositPanel";
 import { WithdrawPanel } from "./components/WithdrawPanel";
 import { useOrderlyStore } from "./store/orderly";
-import { useAccount } from "wagmi";
+// import { useAccount } from "wagmi";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -190,10 +192,29 @@ function Dashboard() {
   );
 }
 
+function NetworkValidator() {
+  const { isConnected, chainId } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
+
+  useEffect(() => {
+    if (!isConnected || !chainId || !switchChainAsync) return;
+    if (chainId === arbitrumSepolia.id) return; // already on Arbitrum Sepolia
+
+    switchChainAsync({ chainId: arbitrumSepolia.id }).catch((error) => {
+      if (error?.code !== 4001) {
+        console.log("Failed to switch network:", error);
+      }
+    });
+  }, [isConnected, chainId, switchChainAsync]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
+        <NetworkValidator />
         <Dashboard />
       </QueryClientProvider>
     </WagmiProvider>

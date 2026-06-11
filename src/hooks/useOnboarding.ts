@@ -25,29 +25,42 @@ export type OnboardingStatus =
 const TARGET_CHAIN_ID = arbitrumSepolia.id; // 421614
 
 export function useOnboarding() {
-  const { address } = useAccount();
-  const chainId = useChainId();
+  const { address, chain: accountChain } = useAccount();
+  const wagmiChainId = useChainId();
   const { signTypedDataAsync } = useSignTypedData();
   const { switchChainAsync } = useSwitchChain();
   const { setAccountId, setKeypair, setStep } = useOrderlyStore();
 
   const [status, setStatus] = useState<OnboardingStatus>({ type: "idle" });
 
-  // ensure wallet is on the correct chain, prompt switch if not
   const ensureCorrectChain = useCallback(async () => {
-    if (chainId !== TARGET_CHAIN_ID) {
-      setStatus({ type: "loading", message: "Switching to Arbitrum Sepolia…" });
-      try {
-        await switchChainAsync({ chainId: TARGET_CHAIN_ID });
-      } catch (err) {
+    const alreadyCorrect =
+      wagmiChainId === TARGET_CHAIN_ID ||
+      accountChain?.id === TARGET_CHAIN_ID;
+
+    if (alreadyCorrect) return;
+
+    setStatus({ type: "loading", message: "Switching to Arbitrum Sepolia…" });
+
+    try {
+      await switchChainAsync({ chainId: TARGET_CHAIN_ID });
+    } catch (_switchErr) {
+      // WalletConnect throws "Chain not configured" even when the wallet is
+      // already on the right chain (WC permission-only sessions). Re-check
+      // both sources before surfacing the error to the user.
+      const stillWrong =
+        wagmiChainId !== TARGET_CHAIN_ID &&
+        accountChain?.id !== TARGET_CHAIN_ID;
+
+      if (stillWrong) {
         throw new Error(
           "Please switch your wallet to Arbitrum Sepolia (chainId 421614) and try again."
         );
       }
+      // Wallet is actually on the right chain — swallow the WC false-positive
     }
-  }, [chainId, switchChainAsync]);
+  }, [wagmiChainId, accountChain, switchChainAsync]);
 
-  // check if account is already registered, return accountId or null
   const checkAccount = useCallback(async (): Promise<string | null> => {
     if (!address) return null;
     try {
@@ -62,15 +75,10 @@ export function useOnboarding() {
     }
   }, [address]);
 
-  // register account if not exists, return accountId
-
   const registerAccount = useCallback(async (): Promise<string> => {
     if (!address) throw new Error("Wallet not connected");
 
     await ensureCorrectChain();
-
-    // Re-read chainId after potential switch
-    const effectiveChainId = TARGET_CHAIN_ID;
 
     setStatus({ type: "loading", message: "Fetching registration nonce…" });
 
@@ -78,10 +86,9 @@ export function useOnboarding() {
     const registrationNonce: number = nonceRes.data.data.registration_nonce;
     const timestamp = Date.now();
 
-    // EIP-712 message — wagmi requires BigInt for uint256/uint64
     const eip712Message = {
       brokerId: BROKER_ID,
-      chainId: BigInt(effectiveChainId),
+      chainId: BigInt(TARGET_CHAIN_ID),
       timestamp: BigInt(timestamp),
       registrationNonce: BigInt(registrationNonce),
     };
@@ -89,7 +96,7 @@ export function useOnboarding() {
     setStatus({ type: "loading", message: "Sign the registration message in your wallet…" });
 
     const signature = await signTypedDataAsync({
-      domain: EIP712_DOMAIN_OFFCHAIN(effectiveChainId),
+      domain: EIP712_DOMAIN_OFFCHAIN(TARGET_CHAIN_ID),
       types: {
         Registration: REGISTRATION_TYPES.Registration as unknown as {
           name: string;
@@ -102,11 +109,10 @@ export function useOnboarding() {
 
     setStatus({ type: "loading", message: "Registering account on Orderly…" });
 
-    // API body — plain numbers (no BigInt), JSON-safe
     const regRes = await axios.post(`${ORDERLY_TESTNET_API}/v1/register_account`, {
       message: {
         brokerId: BROKER_ID,
-        chainId: effectiveChainId,
+        chainId: TARGET_CHAIN_ID,
         timestamp,
         registrationNonce,
       },
@@ -120,13 +126,10 @@ export function useOnboarding() {
     return regRes.data.data.account_id as string;
   }, [address, ensureCorrectChain, signTypedDataAsync]);
 
-  // add trading key to the account, return the generated keypair
   const addOrderlyKey = useCallback(async (_accountId: string) => {
     if (!address) throw new Error("Wallet not connected");
 
     await ensureCorrectChain();
-
-    const effectiveChainId = TARGET_CHAIN_ID;
 
     setStatus({ type: "loading", message: "Generating ed25519 keypair…" });
     const keypair = await generateKeypair();
@@ -134,10 +137,9 @@ export function useOnboarding() {
     const timestamp = Date.now();
     const expiration = timestamp + 365 * 24 * 60 * 60 * 1000;
 
-    // EIP-712 message — BigInt for wagmi
     const eip712Message = {
       brokerId: BROKER_ID,
-      chainId: BigInt(effectiveChainId),
+      chainId: BigInt(TARGET_CHAIN_ID),
       orderlyKey: keypair.publicKey,
       scope: "read,trading",
       timestamp: BigInt(timestamp),
@@ -147,7 +149,7 @@ export function useOnboarding() {
     setStatus({ type: "loading", message: "Sign the key delegation in your wallet…" });
 
     const signature = await signTypedDataAsync({
-      domain: EIP712_DOMAIN_OFFCHAIN(effectiveChainId),
+      domain: EIP712_DOMAIN_OFFCHAIN(TARGET_CHAIN_ID),
       types: {
         AddOrderlyKey: ADD_ORDERLY_KEY_TYPES.AddOrderlyKey as unknown as {
           name: string;
@@ -160,11 +162,10 @@ export function useOnboarding() {
 
     setStatus({ type: "loading", message: "Adding Orderly key to your account…" });
 
-    // API body — plain numbers
     const keyRes = await axios.post(`${ORDERLY_TESTNET_API}/v1/orderly_key`, {
       message: {
         brokerId: BROKER_ID,
-        chainId: effectiveChainId,
+        chainId: TARGET_CHAIN_ID,
         orderlyKey: keypair.publicKey,
         scope: "read,trading",
         timestamp,
@@ -181,7 +182,6 @@ export function useOnboarding() {
     return keypair;
   }, [address, ensureCorrectChain, signTypedDataAsync]);
 
-  // main onboarding function that runs through all steps
   const runOnboarding = useCallback(async () => {
     try {
       setStatus({ type: "loading", message: "Checking existing account…" });
@@ -192,7 +192,7 @@ export function useOnboarding() {
       if (!accountId) {
         accountId = await registerAccount();
       } else {
-        setStatus({ type: "loading", message: "Account found — re-registering key…" });
+        setStatus({ type: "loading", message: "Account found — adding trading key…" });
       }
 
       setAccountId(accountId);

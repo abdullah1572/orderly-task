@@ -25,14 +25,18 @@ function stepIndex(step: string): number {
 }
 
 export function OnboardingPanel() {
-  const { isConnected, address } = useAccount();
+  const { isConnected, address, chain } = useAccount();
   const chainId = useChainId();
   const { step, setStep, setWallet } = useOrderlyStore();
   const { runOnboarding, status, setStatus } = useOnboarding();
 
-  const isWrongChain = isConnected && chainId !== arbitrumSepolia.id;
+  // Both sources must disagree before we show a wrong-chain warning.
+  // useChainId() can be stale over WalletConnect; account.chain is more accurate.
+  const isWrongChain =
+    isConnected &&
+    chainId !== arbitrumSepolia.id &&
+    chain?.id !== arbitrumSepolia.id;
 
-  // Sync wallet connection state into Redux
   useEffect(() => {
     if (isConnected && address) {
       if (step === "not_connected") {
@@ -44,7 +48,6 @@ export function OnboardingPanel() {
     }
   }, [isConnected, address, chainId, step, setWallet, setStep]);
 
-  // Toast on status changes
   useEffect(() => {
     if (status.type === "success") {
       toast.success("Onboarding complete!", "You can now deposit and trade.");
