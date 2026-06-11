@@ -30,8 +30,7 @@ export function OnboardingPanel() {
   const { step, setStep, setWallet } = useOrderlyStore();
   const { runOnboarding, status, setStatus } = useOnboarding();
 
-  // Both sources must disagree before we show a wrong-chain warning.
-  // useChainId() can be stale over WalletConnect; account.chain is more accurate.
+
   const isWrongChain =
     isConnected &&
     chainId !== arbitrumSepolia.id &&

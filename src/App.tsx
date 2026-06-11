@@ -51,7 +51,6 @@ function Dashboard() {
         background: "rgba(8,10,16,0.88)",
       }}>
         <div className="navbar-inner">
-          {/* Left: Logo + Brand */}
           <div className="navbar-brand">
             <Logo />
             <div style={{ minWidth: 0 }}>
@@ -68,7 +67,6 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Right: Docs link + Wallet */}
           <div className="navbar-actions">
             <a
               href="https://orderly.network/docs"

@@ -49,13 +49,13 @@ export function useBalance() {
         holding: { token: string; holding: number }[];
       }>("/v1/client/holding", accountId, keypair);
 
-      // console.log("✅ Orderly holding response:", data);
+      // console.log("Orderly holding response:", data);
 
       const usdc = data.holding?.find((h) => h.token === "USDC");
       setOrderlyBalance(usdc?.holding?.toFixed(6) ?? "0.000000");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to fetch";
-      console.error("❌ Orderly balance error:", msg);
+      console.error("Orderly balance error:", msg);
       setOrderlyError(msg);
     } finally {
       setOrderlyLoading(false);
@@ -70,7 +70,7 @@ export function useBalance() {
 
 
   const refetchAfterDeposit = useCallback(async () => {
-    // console.log("⏳ Deposit confirmed — waiting 10s for Orderly indexing…");
+    // console.log("Deposit confirmed — waiting 10s for Orderly indexing…");
     await new Promise((r) => setTimeout(r, 10_000));
     for (let i = 0; i < 3; i++) {
       await fetchOrderlyBalance();

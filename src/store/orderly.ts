@@ -36,10 +36,6 @@ function savePersistedState(state: OrderlyState) {
       JSON.stringify({
         accountId: state.accountId,
         keypair: state.keypair,
-        // FIX: do NOT persist step — on page reload the wallet may be
-        // disconnected, so we must always start from "not_connected".
-        // The wagmi reconnect logic will fire and set step to "connected"
-        // again if the wallet is still connected.
       })
     );
   } catch {
@@ -54,9 +50,6 @@ const initialState: OrderlyState = {
   chainId: null,
   accountId: persisted.accountId ?? null,
   keypair: persisted.keypair ?? null,
-  // FIX: always start from not_connected — OnboardingPanel's useEffect
-  // will set it to "connected" as soon as wagmi re-hydrates the wallet,
-  // and to "ready" if the persisted keypair is still valid.
   step: "not_connected",
 };
 
@@ -67,7 +60,6 @@ const orderlySlice = createSlice({
     setWallet(state, action: PayloadAction<{ address: string; chainId: number }>) {
       state.walletAddress = action.payload.address;
       state.chainId = action.payload.chainId;
-      // Only move to "connected" if we don't already have a valid keypair
       if (state.step === "not_connected") {
         state.step = state.keypair ? "ready" : "connected";
       }

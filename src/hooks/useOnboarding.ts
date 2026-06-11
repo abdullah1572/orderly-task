@@ -45,9 +45,6 @@ export function useOnboarding() {
     try {
       await switchChainAsync({ chainId: TARGET_CHAIN_ID });
     } catch (_switchErr) {
-      // WalletConnect throws "Chain not configured" even when the wallet is
-      // already on the right chain (WC permission-only sessions). Re-check
-      // both sources before surfacing the error to the user.
       const stillWrong =
         wagmiChainId !== TARGET_CHAIN_ID &&
         accountChain?.id !== TARGET_CHAIN_ID;
@@ -57,7 +54,6 @@ export function useOnboarding() {
           "Please switch your wallet to Arbitrum Sepolia (chainId 421614) and try again."
         );
       }
-      // Wallet is actually on the right chain — swallow the WC false-positive
     }
   }, [wagmiChainId, accountChain, switchChainAsync]);
 
