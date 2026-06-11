@@ -72,7 +72,7 @@ export async function orderlyGet<T>(
     `${ORDERLY_TESTNET_API}${path}`,
     {
       headers: {
-        "Content-Type": "application/json",      // ✅ added
+        "Content-Type": "application/json",      
         "orderly-timestamp": ts,
         "orderly-account-id": accountId,
         "orderly-key": keypair.publicKey,

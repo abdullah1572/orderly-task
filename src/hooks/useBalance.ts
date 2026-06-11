@@ -33,14 +33,14 @@ export function useBalance() {
   // Orderly account balance via /v1/client/holding
   const fetchOrderlyBalance = useCallback(async () => {
     if (!accountId || !keypair) {
-      console.warn("⚠️ fetchOrderlyBalance: missing accountId or keypair", {
+      console.warn("fetchOrderlyBalance: missing accountId or keypair", {
         accountId,
         hasKeypair: !!keypair,
       });
       return;
     }
 
-    // console.log("🔍 Fetching Orderly balance for accountId:", accountId);
+    // console.log("Fetching Orderly balance for accountId:", accountId);
     setOrderlyLoading(true);
     setOrderlyError(null);
 
