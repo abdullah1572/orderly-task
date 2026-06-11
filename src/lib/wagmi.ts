@@ -1,6 +1,6 @@
 import { createConfig, http, fallback } from "wagmi";
 import { arbitrumSepolia } from "wagmi/chains";
-import { metaMask, walletConnect, coinbaseWallet, injected } from "wagmi/connectors";
+import { metaMask, walletConnect, coinbaseWallet } from "wagmi/connectors";
 
 const WC_PROJECT_ID: string =
   import.meta.env.VITE_WALLETCONNECT_PROJECT_ID ?? "";
@@ -21,14 +21,27 @@ export const wagmiConfig = createConfig({
   chains: [arbitrumSepolia],
 
   connectors: [
+   
+    // injected({ shimDisconnect: true }),
+
+   
     metaMask(),
+
+  
     walletConnect({
       projectId: WC_PROJECT_ID,
+      showQrModal: true,
+      metadata: {
+        name: "Orderly Perpetuals Dashboard",
+        description: "Orderly Network Perpetual Futures Testnet",
+        url: typeof window !== "undefined" ? window.location.origin : "https://localhost",
+        icons: ["https://orderly.network/favicon.ico"],
+      },
     }),
+
     coinbaseWallet({
       appName: COINBASE_APP_NAME,
     }),
-    injected(),
   ],
 
   transports: {

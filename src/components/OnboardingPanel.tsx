@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
+import { arbitrumSepolia } from "wagmi/chains";
 import { useOnboarding } from "../hooks/useOnboarding";
 import { useOrderlyStore } from "../store/orderly";
 import { toast } from "./Toast";
@@ -25,18 +26,25 @@ function stepIndex(step: string): number {
 
 export function OnboardingPanel() {
   const { isConnected, address } = useAccount();
+  const chainId = useChainId();
   const { step, setStep, setWallet } = useOrderlyStore();
   const { runOnboarding, status, setStatus } = useOnboarding();
 
+  const isWrongChain = isConnected && chainId !== arbitrumSepolia.id;
+
+  // Sync wallet connection state into Redux
   useEffect(() => {
-    if (isConnected && address && step === "not_connected") {
-      setWallet(address, 421614);
+    if (isConnected && address) {
+      if (step === "not_connected") {
+        setWallet(address, chainId);
+      }
     }
     if (!isConnected && step !== "not_connected") {
       setStep("not_connected");
     }
-  }, [isConnected, address, step, setWallet, setStep]);
+  }, [isConnected, address, chainId, step, setWallet, setStep]);
 
+  // Toast on status changes
   useEffect(() => {
     if (status.type === "success") {
       toast.success("Onboarding complete!", "You can now deposit and trade.");
@@ -44,7 +52,6 @@ export function OnboardingPanel() {
     if (status.type === "error") {
       toast.error("Onboarding failed", status.message);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status.type]);
 
   const currentStep = stepIndex(step);
@@ -75,12 +82,11 @@ export function OnboardingPanel() {
       {/* Step progress */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 0, marginBottom: 28 }}>
         {STEPS.map((s, i) => {
-          const done    = i < currentStep;
-          const active  = i === currentStep;
+          const done   = i < currentStep;
+          const active = i === currentStep;
           return (
             <div key={s.id} style={{ flex: 1, display: "flex", alignItems: "flex-start", position: "relative" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
-                {/* Circle */}
                 <div style={{
                   width: 32, height: 32, borderRadius: "50%",
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -98,7 +104,6 @@ export function OnboardingPanel() {
                     </svg>
                   ) : i + 1}
                 </div>
-                {/* Label */}
                 <div style={{ textAlign: "center", marginTop: 8 }}>
                   <div style={{
                     fontSize: 11, fontWeight: 600, lineHeight: 1.3,
@@ -108,7 +113,6 @@ export function OnboardingPanel() {
                   </div>
                 </div>
               </div>
-              {/* Connector line */}
               {i < STEPS.length - 1 && (
                 <div style={{
                   position: "absolute", top: 15, left: "50%", right: "-50%",
@@ -121,6 +125,18 @@ export function OnboardingPanel() {
           );
         })}
       </div>
+
+      {/* Wrong chain warning */}
+      {isWrongChain && (
+        <div className="status-error" style={{ marginBottom: 16 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>
+            Wrong network detected. Please switch to <strong>Arbitrum Sepolia</strong> — the button above will do it automatically when you click Register.
+          </span>
+        </div>
+      )}
 
       {/* Status messages */}
       {status.type === "loading" && (

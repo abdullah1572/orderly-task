@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { useAccount, useSignTypedData, useChainId } from "wagmi";
+import { useAccount, useSignTypedData, useChainId, useSwitchChain } from "wagmi";
+import { arbitrumSepolia } from "wagmi/chains";
 import axios from "axios";
 import {
   BROKER_ID,
@@ -21,15 +22,32 @@ export type OnboardingStatus =
   | { type: "success"; message: string }
   | { type: "error"; message: string };
 
+const TARGET_CHAIN_ID = arbitrumSepolia.id; // 421614
+
 export function useOnboarding() {
   const { address } = useAccount();
   const chainId = useChainId();
   const { signTypedDataAsync } = useSignTypedData();
+  const { switchChainAsync } = useSwitchChain();
   const { setAccountId, setKeypair, setStep } = useOrderlyStore();
 
   const [status, setStatus] = useState<OnboardingStatus>({ type: "idle" });
 
-  // ── Step 1: Check if account already exists ──────────────────────────────
+  // ensure wallet is on the correct chain, prompt switch if not
+  const ensureCorrectChain = useCallback(async () => {
+    if (chainId !== TARGET_CHAIN_ID) {
+      setStatus({ type: "loading", message: "Switching to Arbitrum Sepolia…" });
+      try {
+        await switchChainAsync({ chainId: TARGET_CHAIN_ID });
+      } catch (err) {
+        throw new Error(
+          "Please switch your wallet to Arbitrum Sepolia (chainId 421614) and try again."
+        );
+      }
+    }
+  }, [chainId, switchChainAsync]);
+
+  // check if account is already registered, return accountId or null
   const checkAccount = useCallback(async (): Promise<string | null> => {
     if (!address) return null;
     try {
@@ -44,9 +62,15 @@ export function useOnboarding() {
     }
   }, [address]);
 
-  // register account
+  // register account if not exists, return accountId
+
   const registerAccount = useCallback(async (): Promise<string> => {
-    if (!address || !chainId) throw new Error("Wallet not connected");
+    if (!address) throw new Error("Wallet not connected");
+
+    await ensureCorrectChain();
+
+    // Re-read chainId after potential switch
+    const effectiveChainId = TARGET_CHAIN_ID;
 
     setStatus({ type: "loading", message: "Fetching registration nonce…" });
 
@@ -54,9 +78,10 @@ export function useOnboarding() {
     const registrationNonce: number = nonceRes.data.data.registration_nonce;
     const timestamp = Date.now();
 
-    const message = {
+    // EIP-712 message — wagmi requires BigInt for uint256/uint64
+    const eip712Message = {
       brokerId: BROKER_ID,
-      chainId: BigInt(chainId),
+      chainId: BigInt(effectiveChainId),
       timestamp: BigInt(timestamp),
       registrationNonce: BigInt(registrationNonce),
     };
@@ -64,7 +89,7 @@ export function useOnboarding() {
     setStatus({ type: "loading", message: "Sign the registration message in your wallet…" });
 
     const signature = await signTypedDataAsync({
-      domain: EIP712_DOMAIN_OFFCHAIN(chainId),
+      domain: EIP712_DOMAIN_OFFCHAIN(effectiveChainId),
       types: {
         Registration: REGISTRATION_TYPES.Registration as unknown as {
           name: string;
@@ -72,15 +97,16 @@ export function useOnboarding() {
         }[],
       },
       primaryType: "Registration",
-      message,
+      message: eip712Message,
     });
 
     setStatus({ type: "loading", message: "Registering account on Orderly…" });
 
+    // API body — plain numbers (no BigInt), JSON-safe
     const regRes = await axios.post(`${ORDERLY_TESTNET_API}/v1/register_account`, {
       message: {
         brokerId: BROKER_ID,
-        chainId,
+        chainId: effectiveChainId,
         timestamp,
         registrationNonce,
       },
@@ -92,11 +118,15 @@ export function useOnboarding() {
       throw new Error("Registration failed: " + JSON.stringify(regRes.data));
 
     return regRes.data.data.account_id as string;
-  }, [address, chainId, signTypedDataAsync]);
+  }, [address, ensureCorrectChain, signTypedDataAsync]);
 
-  // add orderly key
+  // add trading key to the account, return the generated keypair
   const addOrderlyKey = useCallback(async (_accountId: string) => {
-    if (!address || !chainId) throw new Error("Wallet not connected");
+    if (!address) throw new Error("Wallet not connected");
+
+    await ensureCorrectChain();
+
+    const effectiveChainId = TARGET_CHAIN_ID;
 
     setStatus({ type: "loading", message: "Generating ed25519 keypair…" });
     const keypair = await generateKeypair();
@@ -104,11 +134,12 @@ export function useOnboarding() {
     const timestamp = Date.now();
     const expiration = timestamp + 365 * 24 * 60 * 60 * 1000;
 
-    const message = {
+    // EIP-712 message — BigInt for wagmi
+    const eip712Message = {
       brokerId: BROKER_ID,
-      chainId: BigInt(chainId),
+      chainId: BigInt(effectiveChainId),
       orderlyKey: keypair.publicKey,
-      scope: "read,trading",         
+      scope: "read,trading",
       timestamp: BigInt(timestamp),
       expiration: BigInt(expiration),
     };
@@ -116,7 +147,7 @@ export function useOnboarding() {
     setStatus({ type: "loading", message: "Sign the key delegation in your wallet…" });
 
     const signature = await signTypedDataAsync({
-      domain: EIP712_DOMAIN_OFFCHAIN(chainId),
+      domain: EIP712_DOMAIN_OFFCHAIN(effectiveChainId),
       types: {
         AddOrderlyKey: ADD_ORDERLY_KEY_TYPES.AddOrderlyKey as unknown as {
           name: string;
@@ -124,17 +155,18 @@ export function useOnboarding() {
         }[],
       },
       primaryType: "AddOrderlyKey",
-      message,
+      message: eip712Message,
     });
 
     setStatus({ type: "loading", message: "Adding Orderly key to your account…" });
 
+    // API body — plain numbers
     const keyRes = await axios.post(`${ORDERLY_TESTNET_API}/v1/orderly_key`, {
       message: {
         brokerId: BROKER_ID,
-        chainId,
+        chainId: effectiveChainId,
         orderlyKey: keypair.publicKey,
-        scope: "read,trading",       
+        scope: "read,trading",
         timestamp,
         expiration,
       },
@@ -147,9 +179,9 @@ export function useOnboarding() {
 
     storeKeypair(keypair);
     return keypair;
-  }, [address, chainId, signTypedDataAsync]);
+  }, [address, ensureCorrectChain, signTypedDataAsync]);
 
-  // run onboarding
+  // main onboarding function that runs through all steps
   const runOnboarding = useCallback(async () => {
     try {
       setStatus({ type: "loading", message: "Checking existing account…" });
@@ -165,7 +197,6 @@ export function useOnboarding() {
 
       setAccountId(accountId);
 
-    
       clearKeypair();
       const keypair = await addOrderlyKey(accountId);
 

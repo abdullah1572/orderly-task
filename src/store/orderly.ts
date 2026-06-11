@@ -3,7 +3,6 @@ import type { PayloadAction } from "@reduxjs/toolkit";
 import { useDispatch, useSelector } from "react-redux";
 import type { OrderlyKeypair } from "../lib/orderly";
 
-// types and functions related to Orderly account management
 export type OnboardingStep =
   | "not_connected"
   | "connected"
@@ -20,7 +19,6 @@ interface OrderlyState {
   step: OnboardingStep;
 }
 
-// load and save to localStorage 
 function loadPersistedState(): Partial<OrderlyState> {
   try {
     const raw = localStorage.getItem("orderly-session");
@@ -33,13 +31,15 @@ function loadPersistedState(): Partial<OrderlyState> {
 
 function savePersistedState(state: OrderlyState) {
   try {
-    // Only persist accountId and keypair
     localStorage.setItem(
       "orderly-session",
       JSON.stringify({
         accountId: state.accountId,
         keypair: state.keypair,
-        step: state.step,
+        // FIX: do NOT persist step — on page reload the wallet may be
+        // disconnected, so we must always start from "not_connected".
+        // The wagmi reconnect logic will fire and set step to "connected"
+        // again if the wallet is still connected.
       })
     );
   } catch {
@@ -47,7 +47,6 @@ function savePersistedState(state: OrderlyState) {
   }
 }
 
-// initial state with persisted values if available
 const persisted = loadPersistedState();
 
 const initialState: OrderlyState = {
@@ -55,10 +54,12 @@ const initialState: OrderlyState = {
   chainId: null,
   accountId: persisted.accountId ?? null,
   keypair: persisted.keypair ?? null,
-  step: (persisted.step as OnboardingStep) ?? "not_connected",
+  // FIX: always start from not_connected — OnboardingPanel's useEffect
+  // will set it to "connected" as soon as wagmi re-hydrates the wallet,
+  // and to "ready" if the persisted keypair is still valid.
+  step: "not_connected",
 };
 
-// slice for orderly state management
 const orderlySlice = createSlice({
   name: "orderly",
   initialState,
@@ -66,7 +67,10 @@ const orderlySlice = createSlice({
     setWallet(state, action: PayloadAction<{ address: string; chainId: number }>) {
       state.walletAddress = action.payload.address;
       state.chainId = action.payload.chainId;
-      state.step = "connected";
+      // Only move to "connected" if we don't already have a valid keypair
+      if (state.step === "not_connected") {
+        state.step = state.keypair ? "ready" : "connected";
+      }
     },
     clearWallet(state) {
       state.walletAddress = null;
@@ -88,6 +92,7 @@ const orderlySlice = createSlice({
       state.accountId = null;
       state.keypair = null;
       state.step = "not_connected";
+      try { localStorage.removeItem("orderly-session"); } catch { /* ignore */ }
     },
   },
 });
@@ -101,29 +106,24 @@ export const {
   reset,
 } = orderlySlice.actions;
 
-// store configuration
 export const store = configureStore({
   reducer: {
     orderly: orderlySlice.reducer,
   },
 });
 
-// Persist on every state change
 store.subscribe(() => {
   savePersistedState(store.getState().orderly);
 });
 
-// types for use in components and hooks
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
-// ─── Typed hooks for using the store in components 
 export function useOrderlyStore() {
   const dispatch = useDispatch<AppDispatch>();
   const state = useSelector((s: RootState) => s.orderly);
 
   return {
-    // state
     walletAddress: state.walletAddress,
     chainId: state.chainId,
     accountId: state.accountId,
