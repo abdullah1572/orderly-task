@@ -88,3 +88,7 @@ API:   https://testnet-api.orderly.org
 # Special Note Orderly Network is slow 
 
 You can see you transaction here https://testnet.layerzeroscan.com/address if orderly balance not updating becuase its of slow network but you can see transaction here
+
+# Chain Switching
+
+On mobile chain switching also working also please connect metamask through walletconnect becuase if directly click on metamask it will connect account also signature give but provider responce not comes 
